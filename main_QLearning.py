@@ -8,16 +8,17 @@ NUM_ACTIONS = 3 # Up, Down
 ALPHA = .3 # Learning Rate 
 GAMMA = .99 # Discount factor for future rewards 
 EPSILON = .2 # Exploration rate 
+BATCH_SIZE = 50
+SUCCESS_NUM = .96 # running mean end value to consider the current AI a working AI
 
 RESUME = True   # Do you want to continue from the last check point? False if not, True if you do
-FILENAME = 'qlearn_v3.p'
+FILENAME = 'qlearn_v5.p'
 
 # Conditional that checks to see if you want to start a new q_table or go with a previous one
 if RESUME:
     q_table = pickle.load(open(FILENAME, 'rb')) # This loads in the file containing the q_table 
 else:
     q_table = np.zeros((NUM_STATES, NUM_ACTIONS)) # This creates a q_table that is that is NUM_STATES x NUM_ACTIONS and fills each spot with zero
-
 
 gym.register(id='MyPong-v0', entry_point='my_pong_package.my_pong_env:MyPongEnv') # Registers and locates my class in a different file
 env = gym.make('MyPong-v0') # Instantiates a gym object of MyPongEnv
@@ -109,8 +110,10 @@ def learn(state, action, reward, next_state, next_action):
 clock = pygame.time.Clock()
 env.init_pygame()
 running = True
-running_reward = None
+running_reward = 0
 episode_num = 0
+denominator = 1
+LEARNING = True
 
 """
     Run the main training loop for reinforcement learning.
@@ -144,18 +147,29 @@ while running:
     observation, reward, done, info = env.step(action)
     if done:
         episode_num += 1
-        next_state = get_state()
-        next_action = choose_action(next_state)
 
-        learn(state, action, reward, next_state, next_action)
+        if LEARNING:
+            next_state = get_state()
+            next_action = choose_action(next_state)
 
-        #monitoring of the training process
-        running_reward = reward if running_reward is None else running_reward * .99 + reward * .01
-        print ('RESETTING ENVIRONMENT: Episode %f reward total was %f. Running Mean: %f' % (episode_num, reward, running_reward))
+            learn(state, action, reward, next_state, next_action)
+
+        # Monitoring of the training process
+        running_reward += reward
+
+        if episode_num % BATCH_SIZE == 0:
+            # Calculate the average score during the last batch of 25 episodes
+            batch_average = running_reward / BATCH_SIZE
+            print('RESETTING ENVIRONMENT: Episodes %d-%d average reward was %f. Running Mean: %f' % (episode_num - (BATCH_SIZE-1), episode_num, batch_average, running_reward / episode_num))
+            
+            if batch_average >= SUCCESS_NUM:
+                running = False
+            
+            running_reward = 0  # Reset the running reward for the next batch
 
         if episode_num % 10 == 0: pickle.dump(q_table, open(FILENAME, 'wb'))
     
     env.update_display()
 
-
+print(q_table)
 pygame.quit()
