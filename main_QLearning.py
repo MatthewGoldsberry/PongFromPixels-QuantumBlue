@@ -8,7 +8,7 @@ NUM_ACTIONS = 3 # Up, Down
 ALPHA = .3 # Learning Rate 
 GAMMA = .99 # Discount factor for future rewards 
 EPSILON = .2 # Exploration rate 
-BATCH_SIZE = 50
+BATCH_SIZE = 5
 SUCCESS_NUM = .96 # running mean end value to consider the current AI a working AI
 
 RESUME = True   # Do you want to continue from the last check point? False if not, True if you do
@@ -113,7 +113,11 @@ running = True
 running_reward = 0
 episode_num = 0
 denominator = 1
-LEARNING = True
+opponent_score = 0
+player_score = 0
+opponent_wins = 0
+player_wins = 0
+LEARNING = False
 
 """
     Run the main training loop for reinforcement learning.
@@ -154,20 +158,31 @@ while running:
 
             learn(state, action, reward, next_state, next_action)
 
-        # Monitoring of the training process
-        running_reward += reward
+            # Monitoring of the training process
+            running_reward += reward
 
-        if episode_num % BATCH_SIZE == 0:
-            # Calculate the average score during the last batch of 25 episodes
-            batch_average = running_reward / BATCH_SIZE
-            print('RESETTING ENVIRONMENT: Episodes %d-%d average reward was %f. Running Mean: %f' % (episode_num - (BATCH_SIZE-1), episode_num, batch_average, running_reward / episode_num))
-            
-            if batch_average >= SUCCESS_NUM:
-                running = False
-            
-            running_reward = 0  # Reset the running reward for the next batch
+            if episode_num % BATCH_SIZE == 0:
+                # Calculate the average score during the last batch of 25 episodes
+                batch_average = running_reward / BATCH_SIZE
+                print('RESETTING ENVIRONMENT: Episodes %d-%d average reward was %f. Wins %f/%f. Running Mean: %f' % (episode_num - (BATCH_SIZE-1), episode_num, batch_average, ((BATCH_SIZE/2) + batch_average*(BATCH_SIZE/2)), BATCH_SIZE, running_reward / episode_num))
+                
+                if batch_average >= SUCCESS_NUM:
+                    running = False
+                
+                running_reward = 0  # Reset the running reward for the next batch
 
-        if episode_num % 10 == 0: pickle.dump(q_table, open(FILENAME, 'wb'))
+            if episode_num % 10 == 0: pickle.dump(q_table, open(FILENAME, 'wb'))
+        
+        else:
+            opponent_score += 1
+            player_score += 1
+            if (opponent_score == 21):
+                opponent_wins += 1
+                print("OPPONENT WIN :(( GAME SCORE: %f-%f... AI RECORD: %f-%f... RESETTING THE GAME" % (opponent_score, player_score, player_wins, opponent_wins))
+            elif (player_score == 21):
+                player_wins += 1
+                print("PLAYER WIN!!! GAME SCORE: %f-%f... AI RECORD: %f-%f... RESETTING THE GAME" % (player_score, opponent_score, player_wins, opponent_wins))
+
     
     env.update_display()
 
