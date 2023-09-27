@@ -7,8 +7,9 @@ from pong_ai import PongAI  # Import the AI module
 # ... (other code as before) ...
 
 # Create the custom Gym environment
-env = gym.make('Pong-v0')
-
+gym.register(id='MyPong-v0', entry_point='pong_env.pong_env:MyPongEnv') # Registers and locates my class in a different file
+env = gym.make('MyPong-v0') # Instantiates a gym object of MyPongEnv
+print(env)
 # Create the AI agent with access to the action space
 ai_agent = PongAI(env.action_space)
 

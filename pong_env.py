@@ -16,6 +16,10 @@ WHITE = (255, 255, 255)
 left_score = 0
 right_score = 0
 collision_speed_boost_timer = 0
+NUM_ACTIONS = 2  # Up and down actions
+MIN_OBS = 0      # Assuming pixel values range from 0 to 255
+MAX_OBS = 255
+OBS_SHAPE = (84, 84, 1)  # Grayscale images with shape (height, width, num_channels)
 
 # Font and text settings
 font = pygame.font.Font(None, 36)  # You can adjust the font size and style
