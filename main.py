@@ -1,27 +1,56 @@
+print("test")
 import pygame
 import numpy as np
-import gym
-from gym import spaces
-from pong_ai import PongAI  # Import the AI module
+import warnings
 
-# ... (other code as before) ...
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    import gym
+import ai_paddle
+from pong_env import PongEnv, get_state_representation, initialize_game, handle_events, update_paddle_position, handle_ball_collisions, check_paddle_collisions, update_ball_position, handle_score_logic, decrease_collision_speed_boost_timer, clear_screen, draw_game_elements
+import pong_ai
 
-# Create the custom Gym environment
-gym.register(id='MyPong-v0', entry_point='pong_env.pong_env:MyPongEnv') # Registers and locates my class in a different file
-env = gym.make('MyPong-v0') # Instantiates a gym object of MyPongEnv
-print(env)
-# Create the AI agent with access to the action space
-ai_agent = PongAI(env.action_space)
 
-# Game loop
-running = True
-while running:
-    # ... (other code as before) ...
+# Initialize Pygame
+pygame.init()
 
-    # Call the AI to choose an action based on the current observation
-    action = ai_agent.choose_action(observation)
+# Turns off warnings so I can see debugging code when it posts in terminal (DO NOT REMOVE)
+gym.logger.set_level(ERROR)
 
-    # Apply the chosen action to the environment
-    observation, reward, done, _ = env.step(action)
+def main():
+    # Constants and initialization done in PongEnv
+    running = True
+    initialize_game(WIDTH, HEIGHT)
+    
+    while running:
+        
 
-    # ... (other code as before) ...
+        ai_paddle.ai_move(ball_pos, right_paddle_pos, paddle_height, HEIGHT, PADDLE_SPEED)
+
+        # Call your AI function to choose an action
+        ai_action = pong_ai.choose_action(get_state_representation())
+        print(ai_action)
+        
+        # Update the game state based on AI's action
+        perform_action(ai_action)
+        print("Calling preform_action function")
+
+        handle_events(ai_action)
+        update_paddle_position()
+        handle_ball_collisions()
+        check_paddle_collisions()
+        update_ball_position()
+        handle_score_logic()
+        decrease_collision_speed_boost_timer()
+        clear_screen()
+        draw_game_elements()
+        
+        pygame.display.flip()
+
+if __name__ == "__main__":
+    WIDTH, HEIGHT, BALL_SPEED, PADDLE_SPEED, ball_pos, ball_vel, paddle_height, left_paddle_pos, right_paddle_pos, paddle_vel = env.reset()
+    clock = pygame.time.Clock()
+    main()
+
+# Quit Pygame
+pygame.quit()

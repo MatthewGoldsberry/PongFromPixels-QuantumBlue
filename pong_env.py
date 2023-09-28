@@ -81,17 +81,17 @@ env = gym.make('Pong-v0')
 # Game loop
 running = True
 while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                paddle_vel = -1  # Move the paddle up
-            elif event.key == pygame.K_DOWN:
-                paddle_vel = 1  # Move the paddle down
-        elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                paddle_vel = 0  # Stop the paddle when the key is released
+##    for event in pygame.event.get():
+##        if event.type == pygame.QUIT:
+##            running = False
+##        elif event.type == pygame.KEYDOWN:
+##            if event.key == pygame.K_UP:
+##                paddle_vel = -1  # Move the paddle up
+##            elif event.key == pygame.K_DOWN:
+##                paddle_vel = 1  # Move the paddle down
+##        elif event.type == pygame.KEYUP:
+##            if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+##                paddle_vel = 0  # Stop the paddle when the key is released
 
     # Call clock.tick() to control the frame rate (e.g., limit to 60 FPS)
     clock.tick(300)
