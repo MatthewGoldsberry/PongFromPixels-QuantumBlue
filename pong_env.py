@@ -5,7 +5,10 @@ from gym import spaces
 import ai_paddle  # Import the AI script
 
 # Initialize Pygame
-pygame.init()
+try:
+    pygame.init()
+except pygame.error as e:
+    print(f"An error occurred while initializing pygame: {e}")
 
 
 # Constants
