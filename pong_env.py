@@ -1,10 +1,6 @@
-print("pong Test")
 import pygame
 import numpy as np
-import gym
-from gym import spaces
-
-print("pong env")
+import math
 
 # Constants
 WIDTH, HEIGHT = 800, 400
@@ -19,153 +15,112 @@ MIN_OBS = 0      # Assuming pixel values range from 0 to 255
 MAX_OBS = 255
 OBS_SHAPE = (84, 84, 1)  # Grayscale images with shape (height, width, num_channels)
 
-print("pong Constants")
+class PongGame:
+    def __init__(self):
+        self.init_pygame()
+        self.reset()
 
-# Font and text settings
-font = pygame.font.Font(None, 36)  # You can adjust the font size and style
-text_color = (255, 255, 255)  # White text color
-print("pong font")
+    def init_pygame(self):
+        pygame.init()
+        pygame.font.init()
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption('Custom Pong Environment')
+        self.font = pygame.font.Font(None, 18)  # Font for the scoreboard
 
-# FPS tracking variables
-clock = pygame.time.Clock()
-clock.tick(300)
-fps = int(clock.get_fps())
-print("pong FPS")
+    def reset(self):
+        # Reset paddle positions
+        self.paddle_position = HEIGHT / 2
+        self.opponent_paddle_position = HEIGHT / 2
 
-# Create the screen
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Pong")
-print("pong Screen")
+        # Reset ball position
+        self.ball_position = {
+            'x': WIDTH / 2,
+            'y': HEIGHT / 2
+        }
 
-# Initialize game variables
-ball_pos = np.array([WIDTH // 2, HEIGHT // 2])
-ball_vel = np.array([BALL_SPEED, BALL_SPEED])
-paddle_height = 100
-left_paddle_pos = np.array([20, HEIGHT // 2 - paddle_height // 2])
-right_paddle_pos = np.array([WIDTH - 40, HEIGHT // 2 - paddle_height // 2])
-paddle_vel = 0
-print("pong Variables")
+        # Reset ball speed with random direction
+        self.ball_speed_x = BALL_SPEED * (np.random.randint(2) * 2 - 1)
+        self.ball_speed_y = BALL_SPEED * (np.random.randint(2) * 2 - 1)
 
-def initialize_pygame():
-    print("pong Initializing")
-    # Register the custom Gym environment
-    gym.register(id='Pong-v0', entry_point='pong_env:PongEnv')
+        # Reset game score
+        global left_score, right_score
+        left_score = 0
+        right_score = 0
 
-    # Create the environment
-    env = gym.make('Pong-v0')
+    def update_display(self):
+        self.screen.fill((0, 0, 0))  # Fill the screen with black
 
-    # Initialize Pygame
-    pygame.init()
+        # Draw paddles
+        pygame.draw.rect(self.screen, WHITE,
+                         pygame.Rect(20, self.paddle_position - 50, 20, 100))
+        pygame.draw.rect(self.screen, WHITE,
+                         pygame.Rect(WIDTH - 40, self.opponent_paddle_position - 50, 20, 100))
 
-# Create a custom Gym environment class
+        # Draw ball
+        pygame.draw.ellipse(self.screen, WHITE,
+                            (self.ball_position['x'] - 10, self.ball_position['y'] - 10, 20, 20))
 
+        # Draw scores
+        left_score_text = self.font.render(f"Left Score: {left_score}", True, WHITE)
+        right_score_text = self.font.render(f"Right Score: {right_score}", True, WHITE)
+        self.screen.blit(left_score_text, (10, 10))
+        self.screen.blit(right_score_text, (WIDTH - 200, 10))
 
-def handle_events():
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            quit()
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                paddle_vel = -1  # Move the paddle up
-            elif event.key == pygame.K_DOWN:
-                paddle_vel = 1  # Move the paddle down
-        elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                paddle_vel = 0  # Stop the paddle when the key is released
-    if ai_action == "up":
-        paddle_vel = -1
-    elif ai_action == "down":
-        paddle_vel = 1
+        pygame.display.flip()  # Update the display
 
-    return paddle_vel
+    def take_action(self, action):
+        # Apply the action to the environment and calculate new state and reward
+        # Update the game state based on the chosen action
+        self.update_paddle_position(action, False)
+        self.update_ball_position()
 
-def update_paddle_position():
-    # Update paddle positions
-    left_paddle_pos[1] += paddle_vel
-    if left_paddle_pos[1] < 0:
-        left_paddle_pos[1] = 0
-    elif left_paddle_pos[1] > HEIGHT - paddle_height:
-        left_paddle_pos[1] = HEIGHT - paddle_height
+    def update_paddle_position(self, action, is_opponent):
+        # Paddle movement logic
+        if is_opponent:
+            if action == 0:  # Move paddle up
+                self.opponent_paddle_position = max(0, self.opponent_paddle_position - PADDLE_SPEED)
+            elif action == 1:  # Move paddle down
+                self.opponent_paddle_position = min(HEIGHT - 100, self.opponent_paddle_position + PADDLE_SPEED)
+        else:
+            if action == 0:  # Move paddle up
+                self.paddle_position = max(0, self.paddle_position - PADDLE_SPEED)
+            elif action == 1:  # Move paddle down
+                self.paddle_position = min(HEIGHT - 100, self.paddle_position + PADDLE_SPEED)
 
-def handle_ball_collisions():
-    # Ball collisions
-    if ball_pos[1] <= 0 or ball_pos[1] >= HEIGHT:
-        ball_vel[1] = -ball_vel[1]
+    def update_ball_position(self):
+        # Update the ball's position based on its speed
+        self.ball_position['x'] += self.ball_speed_x
+        self.ball_position['y'] += self.ball_speed_y
 
-def check_paddle_collisions():
-    # Check for collisions with the paddles before updating ball position
-    if (ball_pos[0] - 10 <= left_paddle_pos[0] + 10 and 
-        left_paddle_pos[1] <= ball_pos[1] <= left_paddle_pos[1] + paddle_height):
-        # Change the ball's horizontal velocity without a speed boost
-        ball_vel[0] = -ball_vel[0]
+        # Ball collisions with top and bottom walls
+        if self.ball_position['y'] <= 0 or self.ball_position['y'] >= HEIGHT:
+            self.ball_speed_y = -self.ball_speed_y
 
-    if (ball_pos[0] + 10 >= right_paddle_pos[0] - 10 and 
-        right_paddle_pos[1] <= ball_pos[1] <= right_paddle_pos[1] + paddle_height):
-        # Change the ball's horizontal velocity without a speed boost
-        ball_vel[0] = -ball_vel[0]
+        # Check for collisions with the paddles before updating ball position
+        if (self.ball_position['x'] <= 30 and
+            self.paddle_position <= self.ball_position['y'] <= self.paddle_position + 100):
+            # Change the ball's horizontal velocity without a speed boost
+            self.ball_speed_x = -self.ball_speed_x
+        elif (self.ball_position['x'] >= WIDTH - 40 and
+              self.opponent_paddle_position <= self.ball_position['y'] <= self.opponent_paddle_position + 100):
+            # Change the ball's horizontal velocity without a speed boost
+            self.ball_speed_x = -self.ball_speed_x
 
-def update_ball_position():
-    # Update ball position
-    ball_pos = ball_pos.astype('float64') + ball_vel
+        # Ball out of bounds - handle scoring logic here
+        if self.ball_position['x'] <= 0:
+            # Right paddle scores a point
+            global right_score
+            right_score += 1
+            self.reset_ball()
+        elif self.ball_position['x'] >= WIDTH:
+            # Left paddle scores a point
+            global left_score
+            left_score += 1
+            self.reset_ball()
 
-def handle_score_logic():
-    # Ball out of bounds - handle scoring logic here
-    if ball_pos[0] <= 0:
-        # Right paddle scores a point
-        right_score += 1
-        ball_pos = np.array([WIDTH // 2, HEIGHT // 2])
-        ball_vel = np.array([BALL_SPEED, BALL_SPEED])
-    elif ball_pos[0] >= WIDTH:
-        # Left paddle scores a point
-        left_score += 1
-        ball_pos = np.array([WIDTH // 2, HEIGHT // 2])
-        ball_vel = np.array([-BALL_SPEED, BALL_SPEED])
-
-def decrease_collision_speed_boost_timer():
-    # Decrease the collision_speed_boost_timer if it's active
-    if collision_speed_boost_timer > 0:
-        collision_speed_boost_timer -= 1
-
-def clear_screen():
-    # Clear the screen
-    screen.fill((0, 0, 0))
-
-def get_state_representation(self):
-    # Gather and return the current state information
-    ball_position = self.ball_pos
-    left_paddle_position = self.left_paddle_pos
-    right_paddle_position = self.right_paddle_pos
-    # ... other relevant game state variables ...
-    
-    state = {
-        'ball_position': ball_position,
-        'left_paddle_position': left_paddle_position,
-        'right_paddle_position': right_paddle_position,
-    }
-    
-    return state
-
-def draw_game_elements():
-    # Create a text surface with the current paddle speed
-    speed_text = font.render(f"Speed: {PADDLE_SPEED}", True, text_color)
-    # Create a text surface with the current paddle velocity
-    speed_text2 = font.render(f"Velocity: {paddle_vel}", True, text_color)
-    # Create a text surface with the current paddle velocity
-    fps_text = font.render(f"FPS: {fps}", True, text_color)
-    # Create text surfaces for left and right scores
-    left_score_text = font.render(f"Left Score: {left_score}", True, text_color)
-    right_score_text = font.render(f"Right Score: {right_score}", True, text_color)
-
-    # Blit (draw) the score text surfaces onto the screen at specific positions
-    screen.blit(left_score_text, (10, 10))  # Adjust the position as needed
-    screen.blit(right_score_text, (WIDTH - 200, 10))  # Adjust the position as needed
-    screen.blit(fps_text, (340, 10))  # Adjust the position as needed
-
-    # Draw paddles and ball
-    pygame.draw.rect(screen, WHITE, (left_paddle_pos[0], left_paddle_pos[1], 20, paddle_height))
-    pygame.draw.rect(screen, WHITE, (right_paddle_pos[0], right_paddle_pos[1], 20, paddle_height))
-    pygame.draw.ellipse(screen, WHITE, (ball_pos[0] - 10, ball_pos[1] - 10, 20, 20))
-
-if __name__ == "__main__":
-    initialize_pygame()
+    def reset_ball(self):
+        # Reset ball position to the center
+        self.ball_position = {'x': WIDTH / 2, 'y': HEIGHT / 2}
+        # Reset ball speed with random direction
+        self.ball_speed_x = BALL_SPEED * (np.random.randint(2) * 2 - 1)
+        self.ball_speed_y = BALL_SPEED * (np.random.randint(2) * 2 - 1)

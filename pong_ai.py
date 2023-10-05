@@ -8,7 +8,7 @@ q_table = {}
 # Hyperparameters
 alpha = 0.1  # Learning rate
 gamma = 0.9  # Discount factor
-epsilon = 0.5  # Exploration rate
+epsilon = 1000 # Exploration rate
 num_episodes = 1000
 
 # Define State Representation function
@@ -18,6 +18,7 @@ def get_state_representation(game_state):
 
 # Define Action Selection function
 def choose_action(state):
+    print("Function Called")
     if random.random() < epsilon:
         # Explore: Choose a random action
         return random.choice(["up", "down"])

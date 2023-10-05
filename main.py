@@ -40,7 +40,7 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-        env.init_pygame()
+
         # Call your AI function to choose an action
         state = env.get_state_representation()
         ai_action = pong_ai.choose_action(state)
