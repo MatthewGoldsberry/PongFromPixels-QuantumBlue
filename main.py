@@ -1,56 +1,64 @@
 print("test")
 import pygame
+print("test2")
 import numpy as np
+print("test3")
 import warnings
-
+print("test4")
+# Turns off warnings so I can see debugging code when it posts in terminal (DO NOT REMOVE)
 with warnings.catch_warnings():
-    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=UserWarning)
     import gym
-import ai_paddle
-from pong_env import PongEnv, get_state_representation, initialize_game, handle_events, update_paddle_position, handle_ball_collisions, check_paddle_collisions, update_ball_position, handle_score_logic, decrease_collision_speed_boost_timer, clear_screen, draw_game_elements
+print("test5")
+import pong_env
+print("test6")
 import pong_ai
 
+print("test7")
+import ai_paddle
+print("test8")
 
-# Initialize Pygame
-pygame.init()
-
-# Turns off warnings so I can see debugging code when it posts in terminal (DO NOT REMOVE)
-gym.logger.set_level(ERROR)
+print("import complete")
 
 def main():
-    # Constants and initialization done in PongEnv
-    running = True
-    initialize_game(WIDTH, HEIGHT)
-    
-    while running:
-        
+    env = pong_env.PongEnv()  # Create the Pong environment
 
-        ai_paddle.ai_move(ball_pos, right_paddle_pos, paddle_height, HEIGHT, PADDLE_SPEED)
+    # Initialize Pygame
+    pygame.init()
+
+    # Constants
+    WIDTH, HEIGHT = 800, 400
+    BALL_SPEED = 1.25
+    PADDLE_SPEED = 1
+    WHITE = (255, 255, 255)
+
+    running = True
+
+    print("Entering the game loop")
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
         # Call your AI function to choose an action
-        ai_action = pong_ai.choose_action(get_state_representation())
-        print(ai_action)
-        
-        # Update the game state based on AI's action
-        perform_action(ai_action)
-        print("Calling preform_action function")
+        state = env.get_state_representation()
+        ai_action = pong_ai.choose_action(state)
 
-        handle_events(ai_action)
-        update_paddle_position()
-        handle_ball_collisions()
-        check_paddle_collisions()
-        update_ball_position()
-        handle_score_logic()
-        decrease_collision_speed_boost_timer()
-        clear_screen()
-        draw_game_elements()
-        
-        pygame.display.flip()
+        # Update the game state based on AI's action
+        env.perform_action(ai_action)
+       
+        env.update_paddle_position()
+        env.handle_ball_collisions()
+        env.check_paddle_collisions()
+        env.update_ball_position()
+        env.handle_score_logic()
+        env.decrease_collision_speed_boost_timer()
+        env.clear_screen()
+        env.draw_game_elements()
+
+    # Quit Pygame
+    pygame.quit()
 
 if __name__ == "__main__":
-    WIDTH, HEIGHT, BALL_SPEED, PADDLE_SPEED, ball_pos, ball_vel, paddle_height, left_paddle_pos, right_paddle_pos, paddle_vel = env.reset()
-    clock = pygame.time.Clock()
     main()
-
-# Quit Pygame
-pygame.quit()
