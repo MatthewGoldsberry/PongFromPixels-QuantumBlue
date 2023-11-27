@@ -8,4 +8,4 @@ Inside this file, you will see the functions that work to make the AI learn and 
 
 The my_pong_env.py File:
 
-Inside this file, you will see the custom class I built that creates the custom pong environment that the agent interacts with. This includes all of the backend to making the balls and paddle move, the opponent control, and the implementation of Pygame to be able to visualize the game. 
+Inside this file, you will see the custom class I built that creates the custom pong environment that the agent interacts with. This includes all of the backend to making the ball and paddles move, the opponent control, and the implementation of Pygame to be able to visualize the game. 
