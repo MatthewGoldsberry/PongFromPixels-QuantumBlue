@@ -3,36 +3,37 @@ import gym
 import pygame
 import pickle
 
-# Helps to build the q-table (controls the size)
-NUM_STATES = 8 # The different states the ball can be in, in relation to the paddle
-NUM_ACTIONS = 3 # Up, Down, still
+# Q-Learning Constants and Configuration
 
-# Learning Constants
-ALPHA = .3 # Learning Rate 
-GAMMA = .99 # Discount factor for future rewards 
-EPSILON = .2 # Exploration rate 
-BATCH_SIZE = 50
-SUCCESS_NUM = .96 # running mean end value to consider the current AI a working AI
+# Constants for Q-table size
+NUM_STATES = 8  # The different states the ball can be in, in relation to the paddle
+NUM_ACTIONS = 3  # Up, Down, Still
 
-# Creation/ Uploading of the q-table 
-RESUME = True   # Do you want to continue from the last check point? False if not, True if you do
-FILENAME = 'qlearn_v5.p' # Constant for the filename that will hold the q-table
+# Learning Parameters
+ALPHA = 0.3  # Learning Rate
+GAMMA = 0.99  # Discount factor for future rewards
+EPSILON = 0.2  # Exploration rate
+BATCH_SIZE = 25
+SUCCESS_NUM = 0.96  # Running mean end value to consider the current AI a working AI
 
-# Conditional that checks to see if you want to start a new q_table or go with a previous one
+# Q-table File Handling
+RESUME = False  # Continue from the last checkpoint (True) or start a new Q-table (False)
+FILENAME = 'qlearn_v10.p'  # Filename for the Q-table file
+
+# Load or Create Q-table
 if RESUME:
-    q_table = pickle.load(open(FILENAME, 'rb')) # This loads in the file containing the q_table 
+    q_table = pickle.load(open(FILENAME, 'rb'))  # Load Q-table from file
 else:
-    q_table = np.zeros((NUM_STATES, NUM_ACTIONS)) # This creates a q_table that is that is NUM_STATES x NUM_ACTIONS and fills each spot with zero
+    q_table = np.zeros((NUM_STATES, NUM_ACTIONS))  # Create a new Q-table
 
-# Instantiating the gym, pong environment 
-gym.register(id='MyPong-v0', entry_point='my_pong_package.my_pong_env:MyPongEnv') # Registers and locates my class in a different file
-env = gym.make('MyPong-v0') # Instantiates a gym object of MyPongEnv
-observation = env.reset() # Reset the environment to start a new episode
+# Instantiate Gym Environment
+gym.register(id='MyPong-v0', entry_point='my_pong_package.my_pong_env2:MyPongEnv')  # Register custom Pong environment
+env = gym.make('MyPong-v0')  # Create Gym environment object
+observation = env.reset()  # Reset environment for a new episode
+
 
 """
-    get_state() 
-
-    Calculate and return the game state based on the relative position of the ball and paddle.
+    get_state():
     
     Returns:
         int: A value representing the game state.
@@ -45,18 +46,19 @@ observation = env.reset() # Reset the environment to start a new episode
              - 6: Ball is significantly below the paddle.
              - 7: Catch-all state for other positions.
 """
-
 def get_state():
    
+    # Calculate the vertical distance between the ball and the paddle
     difference = env.get_ball_position('y') - env.get_your_paddle_position()
 
+    # Determine the game state based on the calculated difference
     if difference <= -env.get_paddle_height():
         return 0
-    elif difference <= -env.get_paddle_height() // 2: 
+    elif difference <= -env.get_paddle_height() // 2:
         return 1
-    elif difference < 0: 
-        return 2 
-    elif difference == 0: 
+    elif difference < 0:
+        return 2
+    elif difference == 0:
         return 3
     elif difference < env.get_paddle_height() // 2:
         return 4
@@ -69,9 +71,7 @@ def get_state():
     
 
 """
-    choose_action() 
-
-    Choose an action based on the epsilon-greedy policy.
+    choose_action():
 
     Args:
         state (int): The current state.
@@ -85,19 +85,18 @@ def get_state():
         estimated Q-value with probability 1 - epsilon).
 
 """
-
 def choose_action(state):
 
-
     if np.random.rand() < EPSILON:
+        # Explore: Randomly choose an action
         return np.random.choice(NUM_ACTIONS)
     else:
+        # Exploit: Choose the action with the highest Q-value
         return np.argmax(q_table[state])
-    
-"""
-    learn()
 
-    Update the Q-table based on the Q-learning algorithm.
+   
+"""
+    learn():
 
     Args:
         state (int): The current state.
@@ -112,31 +111,34 @@ def choose_action(state):
         estimated Q-value for the next state-action pair. The learning rate (ALPHA) and the discount
         factor (GAMMA) control the weight of the update.
 """
-
 def learn(state, action, reward, next_state, next_action):
 
-    predicted_Qvalue = q_table [state,action]
+    predicted_Qvalue = q_table[state, action]
     target_Qvalue = reward + GAMMA * q_table[next_state, next_action]
 
-    q_table[state, action] += ALPHA *(target_Qvalue - predicted_Qvalue)
+    # Update the Q-value in the Q-table
+    q_table[state, action] += ALPHA * (target_Qvalue - predicted_Qvalue)
 
-# Setup for the pygame and game loop
-clock = pygame.time.Clock() # Initilizes the clock that is needed for the pygame
-env.init_pygame() # Initilizes the pygame window through a call to the function in the env object
-running = True # This variable controls whether the game loop runs or not (True = runs, False = stops)
 
-# Variables used in the learning condition
-running_reward = 0 # keeps a running total of the rewards given during training
-episode_num = 0 # coutner variable that keeps track of how many episodes have happened
+# Setup for the Pygame and Game Loop
 
-# Counter Variables for the playing condition
-opponent_score = 0 # running total of the opponent score
-player_score = 0 # running total of the player score (AI)
-opponent_wins = 0 # running total of the wins of the opponent
-player_wins = 0 # running total of the wins of the player (AI)
+clock = pygame.time.Clock()  # Initialize the clock for Pygame
+env.init_pygame()  # Initialize the Pygame window through a function call in the env object
+running = True  # Variable controlling the game loop (True = runs, False = stops)
 
-# Toggle switch between having the AI in learning or gametime mode
-LEARNING = False
+# Variables for Learning Condition
+running_reward = 0  # Running total of rewards during training
+episode_num = 0  # Counter for the number of episodes
+
+# Counter Variables for Playing Condition
+opponent_score = 0  # Running total of opponent's score
+player_score = 0  # Running total of player's score (AI)
+opponent_wins = 0  # Running total of opponent's wins
+player_wins = 0  # Running total of player's wins (AI)
+
+# Toggle switch between AI learning and game time mode
+LEARNING = True
+
 
 """
     Run the main training loop for reinforcement learning.
@@ -153,75 +155,79 @@ LEARNING = False
         - After each episode, it calculates the running mean of rewards and prints progress.
         - It saves the Q-table to a file every 10 episodes.
 """
-
 while running:
-    clock.tick(60) # Limit frame rate to 60 FPS
+    clock.tick(60)  # Limit frame rate to 60 FPS
 
-    # This will stop the pygame if the window is closed
+    # Check if the Pygame window is closed
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    state = get_state() # makes call to the get_state() function to grab the state of the game
-    action = choose_action(state) # makes call to the choose_action() function and passes state to get the action to take
+    state = get_state()  # Get the current state of the game
+    action = choose_action(state)  # Choose an action based on the current state
 
-    env.update_paddle_position(action) # using the action obtained from the previous line this moves the paddle accordingly
+    env.update_paddle_position(action)  # Move the paddle based on the chosen action
 
-    observation, reward, done, info = env.step(action) # steps the game forward as well as returning the oberavation, reward, episode state, and extra info
+    observation, reward, done, info = env.step(action)  # Step the game forward and get observation, reward, episode state, and extra info
 
-    # This occurs if an episode is finished 
+    # Check if an episode is finished
     if done:
-        episode_num += 1 # adds to the running total of episodes that have occurred 
+        episode_num += 1  # Increment the episode counter
 
-        # This occurs if you want the AI in learning mode
+        # If the AI is in learning mode
         if LEARNING:
-            next_state = get_state() # makes call to the get_state() function to grab the nest state of the game
-            next_action = choose_action(next_state) # makes call to the choose_action() function and passes state to get the next action to take
+            next_state = get_state()  # Get the next state of the game
+            next_action = choose_action(next_state)  # Choose the next action based on the next state
 
-            learn(state, action, reward, next_state, next_action) # makes a call to the learn() function that will update the q-table 
-           
-            running_reward += reward # Monitoring of the training process
+            learn(state, action, reward, next_state, next_action)  # Update the q-table based on the Q-learning algorithm
 
-            # this occurs if the episode number is a multiple of the Batch size 
+            running_reward += reward  # Monitor the training process
+
+            # If the episode number is a multiple of the batch size
             if episode_num % BATCH_SIZE == 0:
-                # Calculate the average score during the last batch of 25 episodes
+                # Calculate the average score during the last batch of episodes
                 batch_average = running_reward / BATCH_SIZE
-                print('RESETTING ENVIRONMENT: Episodes %d-%d average reward was %f. Wins %f/%f. Running Mean: %f' % (episode_num - (BATCH_SIZE-1), episode_num, batch_average, ((BATCH_SIZE/2) + batch_average*(BATCH_SIZE/2)), BATCH_SIZE, running_reward / episode_num))
-                
-                # This occurs is the average reward of the batch is greater or equal to the preditermined success average number
+                print('RESETTING ENVIRONMENT: Episodes %d-%d average reward was %f. Wins %f/%f. Running Mean: %f' % (
+                    episode_num - (BATCH_SIZE - 1), episode_num, batch_average,
+                    ((BATCH_SIZE / 2) + batch_average * (BATCH_SIZE / 2)), BATCH_SIZE, running_reward / episode_num))
+
+                # If the average reward of the batch is greater or equal to the predetermined success average number
                 if batch_average >= SUCCESS_NUM:
-                    running = False # This stops the game loop
-                
+                    running = False  # Stop the game loop
+
                 running_reward = 0  # Reset the running reward for the next batch
 
-            if episode_num % 10 == 0: pickle.dump(q_table, open(FILENAME, 'wb')) # This will update the q-table in the open file every 10 episodes
-        
-        # This occurs if the AI is in game mode
-        else:
-            opp = 1 if reward == -1 else 0 # This detemines the avlue to add to the opponent score based on the reward
-            play = 1 if reward == 1 else 0 # This detemines the avlue to add to the player score based on the reward
-            opponent_score += opp # This adds the determined value to the counter variable opponent_score
-            player_score += play # This adds the determined value to the counter variable player_score
+            if episode_num % 10 == 0:
+                pickle.dump(q_table, open(FILENAME, 'wb'))  # Update the q-table in the open file every 10 episodes
 
-            # This occurs if the opponent has scored 21 points
-            if (opponent_score == 21):
-                opponent_wins += 1 # adds a win to the counter variable for the opponent
-                print("OPPONENT WIN :(( GAME SCORE: %f-%f... AI RECORD: %f-%f... RESETTING THE GAME" % (opponent_score, player_score, player_wins, opponent_wins)) # prints the game score and record
-                # Reset the score counter variables 
-                opponent_score = 0 
-                player_score = 0
-            
-            #This occurs if the player has scored 21 points
-            elif (player_score == 21):
-                player_wins += 1 # adds a win to the counter variable for the player
-                print("PLAYER WIN!!! GAME SCORE: %f-%f... AI RECORD: %f-%f... RESETTING THE GAME" % (player_score, opponent_score, player_wins, opponent_wins)) # prints the game score and record
-                # Reset the score counter variables 
+        # If the AI is in game mode
+        else:
+            opp = 1 if reward == -1 else 0  # Determine the value to add to the opponent score based on the reward
+            play = 1 if reward == 1 else 0  # Determine the value to add to the player score based on the reward
+            opponent_score += opp  # Add the determined value to the opponent score
+            player_score += play  # Add the determined value to the player score
+
+            # If the opponent has scored 21 points
+            if opponent_score == 21:
+                opponent_wins += 1  # Increment the win counter for the opponent
+                print("OPPONENT WIN :(( GAME SCORE: %f-%f... AI RECORD: %f-%f... RESETTING THE GAME" % (
+                    opponent_score, player_score, player_wins, opponent_wins))  # Print the game score and record
+                # Reset the score counter variables
                 opponent_score = 0
                 player_score = 0
 
-    # This then finally updates the screen display
-    env.update_display()
+            # If the player has scored 21 points
+            elif player_score == 21:
+                player_wins += 1  # Increment the win counter for the player
+                print("PLAYER WIN!!! GAME SCORE: %f-%f... AI RECORD: %f-%f... RESETTING THE GAME" % (
+                    player_score, opponent_score, player_wins, opponent_wins))  # Print the game score and record
+                # Reset the score counter variables
+                opponent_score = 0
+                player_score = 0
+    
+    # Update the screen display
+    env.update_display()  
 
-# Once the game loop ends the q-tbale is printed out and the pygame is closed down
+# Once the game loop ends, print out the q-table and close Pygame
 print(q_table)
 pygame.quit()
