@@ -14,15 +14,16 @@ ALPHA = 0.3  # Learning Rate
 GAMMA = 0.99  # Discount factor for future rewards
 EPSILON = 0.2  # Exploration rate
 BATCH_SIZE = 25
-SUCCESS_NUM = 0.96  # Running mean end value to consider the current AI a working AI
+SUCCESS_NUM = 0.92  # Running mean end value to consider the current AI a working AI
 
 # Q-table File Handling
-RESUME = False  # Continue from the last checkpoint (True) or start a new Q-table (False)
-FILENAME = 'qlearn_v10.p'  # Filename for the Q-table file
+RESUME = True  # Continue from the last checkpoint (True) or start a new Q-table (False)
+FILENAME = 'qlearn_v1.p'  # Filename for the Q-table file
 
 # Load or Create Q-table
 if RESUME:
-    q_table = pickle.load(open(FILENAME, 'rb'))  # Load Q-table from file
+    with open(FILENAME, 'rb') as q_file:
+        q_table = pickle.load(q_file) # Load Q-table from file
 else:
     q_table = np.zeros((NUM_STATES, NUM_ACTIONS))  # Create a new Q-table
 
@@ -39,12 +40,12 @@ observation = env.reset()  # Reset environment for a new episode
         int: A value representing the game state.
              - 0: Ball is well above the paddle.
              - 1: Ball is somewhat above the paddle.
-             - 2: Ball is below the paddle.
-             - 3: Ball is at the same height as the paddle.
-             - 4: Ball is somewhat below the paddle.
-             - 5: Ball is below the paddle.
-             - 6: Ball is significantly below the paddle.
-             - 7: Catch-all state for other positions.
+             - 2: Ball is in the upper half of the paddle.
+             - 3: Ball is at the same height as the middle of the paddle.
+             - 4: Ball is in the lower half of the paddle.
+             - 5: Ball is somewhat below the paddle.
+             - 6: Ball is moderately below the paddle.
+             - 7: Ball is significantly below the paddle.
 """
 def get_state():
    
@@ -166,9 +167,10 @@ while running:
     state = get_state()  # Get the current state of the game
     action = choose_action(state)  # Choose an action based on the current state
 
-    env.update_paddle_position(action)  # Move the paddle based on the chosen action
+    #env.update_paddle_position(action)  # Move the paddle based on the chosen action
 
-    observation, reward, done, info = env.step(action)  # Step the game forward and get observation, reward, episode state, and extra info
+    # Step the game forward and get observation, reward, episode state, and extra info
+    observation, reward, done, info = env.step(action)
 
     # Check if an episode is finished
     if done:
@@ -187,9 +189,9 @@ while running:
             if episode_num % BATCH_SIZE == 0:
                 # Calculate the average score during the last batch of episodes
                 batch_average = running_reward / BATCH_SIZE
-                print('RESETTING ENVIRONMENT: Episodes %d-%d average reward was %f. Wins %f/%f. Running Mean: %f' % (
+                print('RESETTING ENVIRONMENT: Episodes %d-%d average reward was %f. Wins %f/%f.' % (
                     episode_num - (BATCH_SIZE - 1), episode_num, batch_average,
-                    ((BATCH_SIZE / 2) + batch_average * (BATCH_SIZE / 2)), BATCH_SIZE, running_reward / episode_num))
+                    ((BATCH_SIZE / 2) + batch_average * (BATCH_SIZE / 2)), BATCH_SIZE))
 
                 # If the average reward of the batch is greater or equal to the predetermined success average number
                 if batch_average >= SUCCESS_NUM:
@@ -210,7 +212,7 @@ while running:
             # If the opponent has scored 21 points
             if opponent_score == 21:
                 opponent_wins += 1  # Increment the win counter for the opponent
-                print("OPPONENT WIN :(( GAME SCORE: %f-%f... AI RECORD: %f-%f... RESETTING THE GAME" % (
+                print("OPPONENT WIN: GAME SCORE: %f-%f... AI RECORD: %f-%f... RESETTING THE GAME" % (
                     opponent_score, player_score, player_wins, opponent_wins))  # Print the game score and record
                 # Reset the score counter variables
                 opponent_score = 0
