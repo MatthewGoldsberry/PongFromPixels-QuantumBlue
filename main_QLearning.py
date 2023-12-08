@@ -28,7 +28,7 @@ else:
     q_table = np.zeros((NUM_STATES, NUM_ACTIONS))  # Create a new Q-table
 
 # Instantiate Gym Environment
-gym.register(id='MyPong-v0', entry_point='my_pong_package.my_pong_env2:MyPongEnv')  # Register custom Pong environment
+gym.register(id='MyPong-v0', entry_point='my_pong_package.my_pong_env:MyPongEnv')  # Register custom Pong environment
 env = gym.make('MyPong-v0')  # Create Gym environment object
 observation = env.reset()  # Reset environment for a new episode
 
