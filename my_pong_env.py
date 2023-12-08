@@ -2,7 +2,6 @@ import gym
 import numpy as np
 import pygame
 import math
-import time
 
 
 
@@ -120,11 +119,16 @@ class MyPongEnv(gym.Env):
         self.screen.fill((0, 0, 0))
         
         # Draw paddles
-        pygame.draw.rect(self.screen, (255, 255, 255), pygame.Rect(FIELD_WIDTH - PADDLE_WIDTH - GAP_FROM_WALL, self.paddle_position - PADDLE_HEIGHT / 2, PADDLE_WIDTH, PADDLE_HEIGHT))
-        pygame.draw.rect(self.screen, (255, 255, 255), pygame.Rect(0 + GAP_FROM_WALL, self.opponent_paddle_position - PADDLE_HEIGHT / 2, PADDLE_WIDTH, PADDLE_HEIGHT))
+        pygame.draw.rect(self.screen, (255, 255, 255), pygame.Rect(FIELD_WIDTH - PADDLE_WIDTH - GAP_FROM_WALL, 
+                                                                   self.paddle_position - PADDLE_HEIGHT / 2, 
+                                                                   PADDLE_WIDTH, PADDLE_HEIGHT))
+        pygame.draw.rect(self.screen, (255, 255, 255), pygame.Rect(0 + GAP_FROM_WALL, 
+                                                                   self.opponent_paddle_position - PADDLE_HEIGHT / 2, 
+                                                                   PADDLE_WIDTH, PADDLE_HEIGHT))
         
         # Draw ball
-        pygame.draw.circle(self.screen, (255, 255, 255), (int(self.ball_position['x']), int(self.ball_position['y'])), BALL_DIAMETER / 2)
+        pygame.draw.circle(self.screen, (255, 255, 255), (int(self.ball_position['x']), 
+                                                          int(self.ball_position['y'])), BALL_DIAMETER / 2)
         
         # Update the display
         pygame.display.flip()  
@@ -213,14 +217,12 @@ class MyPongEnv(gym.Env):
         self.update_paddle_position(action, is_opponent=False)
         self.update_paddle_position(self.get_opponent_action(), is_opponent=True)
 
-        # Introduce a delay for visualization purposes
-        time.sleep(0.01)
-
         # Update the position of the ball
         self.update_ball_position()
 
         # Obtain the new observation, convert it to uint8
-        new_observation = self.get_observation().astype(np.uint8)
+        new_observation = self.get_observation()
+        new_observation = new_observation.astype(np.uint8)
 
         # Check if the episode is done
         done = self.is_episode_done()
@@ -254,19 +256,19 @@ class MyPongEnv(gym.Env):
             if action == 0:
                 # Move the opponent's paddle down, ensuring it stays within bounds
                 self.opponent_paddle_position = max(0 + (PADDLE_HEIGHT / 2),
-                                                    self.opponent_paddle_position - PADDLE_SPEED)
+                                                    self.opponent_paddle_position - OPPONENT_PADDLE_SPEED)
             elif action == 1:
                 # Move the opponent's paddle up, ensuring it stays within bounds
                 self.opponent_paddle_position = min(FIELD_HEIGHT - (PADDLE_HEIGHT / 2),
-                                                    self.opponent_paddle_position + PADDLE_SPEED)
+                                                    self.opponent_paddle_position + OPPONENT_PADDLE_SPEED)
         else:
             # Update the player's paddle position
             if action == 0:
                 # Move the player's paddle down, ensuring it stays within bounds
-                self.paddle_position = max(0 + (PADDLE_HEIGHT / 2), self.paddle_position - PADDLE_SPEED)
+                self.paddle_position = max(0 + (PADDLE_HEIGHT / 2), self.paddle_position - PLAYER_PADDLE_SPEED)
             elif action == 2:
                 # Move the player's paddle up, ensuring it stays within bounds
-                self.paddle_position = min(FIELD_HEIGHT - (PADDLE_HEIGHT / 2), self.paddle_position + PADDLE_SPEED)
+                self.paddle_position = min(FIELD_HEIGHT - (PADDLE_HEIGHT / 2), self.paddle_position + PLAYER_PADDLE_SPEED)
 
 
     """
@@ -348,7 +350,8 @@ class MyPongEnv(gym.Env):
         observation = np.array([ball_x, ball_y, player_paddle_y, opponent_paddle_y], dtype=np.float32)
 
         # Normalize and scale to [0, 255]
-        normalized_observation = ((observation - self.observation_space.low) / (self.observation_space.high - self.observation_space.low)) * 255.0
+        normalized_observation = ((observation - self.observation_space.low) / 
+                                  (self.observation_space.high - self.observation_space.low)) * 255.0
 
         # Convert to uint8
         observation_uint8 = normalized_observation.astype(np.uint8)
@@ -538,16 +541,17 @@ GAP_FROM_WALL = 6.25  # Distance between the paddle and the wall
 PADDLE_HEIGHT = 20  # Height of the paddle
 PADDLE_WIDTH = 2.5  # Width of the paddle
 BALL_DIAMETER = 3.75  # Diameter of the ball
-PADDLE_SPEED = 1.25  # Speed at which the paddle moves
+OPPONENT_PADDLE_SPEED = 1.25  # Speed at which the opponent paddle moves
+PLAYER_PADDLE_SPEED = 2.5 # Speed at which the player paddle moves
 BALL_SPEED = 1.35  # General ball speed
-BALL_SPEED_X = 1.35  # Speed of the ball in the x-direction
-BALL_SPEED_Y = 1.35  # Speed of the ball in the y-direction
+BALL_SPEED_X = .9546  # Speed of the ball in the x-direction
+BALL_SPEED_Y = .9546  # Speed of the ball in the y-direction
 WHITE = (255, 255, 255)  # RGB value for the color white
 MAX_BOUNCE_ANGLE = math.radians(60)  # Maximum angle for ball bounce off the paddle
 
 # Calculations
 
-# Initial Paddle Position (Centered vertically)
+# Initial Paddle Position Height (Centered vertically)
 INITIAL_PADDLE_POSITION = FIELD_HEIGHT / 2
 
 # Initial Ball Position (Centered horizontally and vertically)
